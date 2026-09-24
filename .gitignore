@@ -49,6 +49,7 @@ app.*.map.json
 
 # Environment files
 .env
+api/config/cinetrack-firebase-service-account.json
 
 # Dependencies
 node_modules/
@@ -62,3 +63,13 @@ api/cache/
 *.log.txt
 ninja_*.txt
 .vercel
+
+# Local secrets / debug artifacts (keep google-services.json local-only; service-account json covered above)
+android/app/google-services.json
+api/debug_profile.php
+one.txt
+
+# Logs / local build artifacts (build_log*.txt not matched by *.log.txt: underscore vs dot)
+bl3.txt
+build_log.txt
+build_log2.txt
