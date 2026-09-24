@@ -11,6 +11,9 @@ class User {
   final String role;
   final bool emailVerified;
   final String? avatarUrl;
+  final int? followersCount;
+  final int? followingCount;
+  final bool? isFollowing;
 
   const User({
     required this.id,
@@ -25,6 +28,9 @@ class User {
     required this.role,
     required this.emailVerified,
     this.avatarUrl,
+    this.followersCount,
+    this.followingCount,
+    this.isFollowing,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -41,13 +47,14 @@ class User {
       role: json['role'] as String? ?? 'user',
       emailVerified: json['email_verified'] == true,
       avatarUrl: json['avatar_url'] as String?,
+      followersCount: json['followers_count'] as int?,
+      followingCount: json['following_count'] as int?,
+      isFollowing: json['is_following'] as bool?,
     );
   }
 
-  /// Whether this user has admin privileges.
   bool get isAdmin => role == 'admin';
 
-  /// Whether this user has moderator or admin privileges.
   bool get isModerator => role == 'moderator' || role == 'admin';
 
   User copyWith({
@@ -63,6 +70,9 @@ class User {
     String? role,
     bool? emailVerified,
     String? avatarUrl,
+    int? followersCount,
+    int? followingCount,
+    bool? isFollowing,
   }) {
     return User(
       id: id ?? this.id,
@@ -77,6 +87,9 @@ class User {
       role: role ?? this.role,
       emailVerified: emailVerified ?? this.emailVerified,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }

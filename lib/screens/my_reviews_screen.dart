@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../services/api_endpoints.dart';
 import '../config.dart';
 import '../models/movie.dart';
 import '../widgets/loading_shimmer.dart';
-import '../screens/home_screen.dart';
 import '../widgets/empty_state.dart';
 import 'movie_details_screen.dart';
 
@@ -92,10 +94,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
         subtitle: 'Your reviews will appear here',
         actionLabel: 'Discover Movies',
         onAction: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
+          context.go('/browse');
         },
       );
     }
@@ -111,6 +110,39 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _deleteReview(Map<String, dynamic> review) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Delete review', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text('Are you sure you want to delete your review for "${review['movie_title']}"?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            child: Text(l10n.deleteAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    try {
+      final api = context.read<ApiService>();
+      await api.post(ApiEndpoints.reviewDelete, {'movie_id': review['movie_id']});
+      await _fetchReviews();
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    }
   }
 
   Widget _reviewCard(Map<String, dynamic> review) {
@@ -171,11 +203,19 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    review['movie_title'] as String? ?? 'Unknown',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          review['movie_title'] as String? ?? 'Unknown',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _statusChip(review['status'] as String? ?? 'approved'),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -212,6 +252,12 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 ],
               ),
             ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, size: 18, color: Theme.of(context).colorScheme.error),
+              onPressed: () => _deleteReview(review),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
+            ),
           ],
         ),
       ),
@@ -227,5 +273,41 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     } catch (_) {
       return date;
     }
+  }
+
+  Widget _statusChip(String status) {
+    final theme = Theme.of(context);
+    Color bgColor;
+    Color textColor;
+    String label;
+
+    switch (status) {
+      case 'pending':
+        bgColor = const Color(0xFFF0883E).withValues(alpha: 0.15);
+        textColor = const Color(0xFFF0883E);
+        label = 'Pending';
+        break;
+      case 'rejected':
+        bgColor = theme.colorScheme.error.withValues(alpha: 0.15);
+        textColor = theme.colorScheme.error;
+        label = 'Rejected';
+        break;
+      default:
+        bgColor = const Color(0xFF2EA043).withValues(alpha: 0.15);
+        textColor = const Color(0xFF2EA043);
+        label = 'Approved';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
+      ),
+    );
   }
 }

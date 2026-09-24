@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/responsive.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
-import 'auth/login_screen.dart';
-import 'auth/register_screen.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
-  static const _features = [
-    _FeatureData(Icons.search_rounded, 'Smart Search',
-        'Find any movie instantly with powerful search'),
-    _FeatureData(Icons.cloud_sync_rounded, 'API-Powered Discovery',
-        'Browse trending and top-rated movies live from TMDB'),
-    _FeatureData(Icons.favorite_rounded, 'Favorites & Watchlist',
-        'Save movies to your favorites or build a watchlist'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDesk = Responsive.isDesktop(context);
     final padding = Responsive.horizontalPadding(context);
     final theme = context.watch<ThemeProvider>();
     final isDark = theme.isDark;
+
+    final features = [
+      _FeatureData(Icons.search_rounded, l10n.smartSearch, l10n.smartSearchDesc),
+      _FeatureData(Icons.cloud_sync_rounded, l10n.apiDiscovery, l10n.apiDiscoveryDesc),
+      _FeatureData(Icons.favorite_rounded, l10n.favoritesWatchlist, l10n.favoritesWatchlistDesc),
+    ];
 
     return Scaffold(
       body: Container(
@@ -50,7 +48,7 @@ class LandingPage extends StatelessWidget {
                         _Logo(isDesk: isDesk),
                         const SizedBox(height: 16),
                         Text(
-                          'CineTrack',
+                          l10n.landingTitle,
                           style: GoogleFonts.montserrat(
                             fontSize: Responsive.font(context, 40),
                             fontWeight: FontWeight.w700,
@@ -60,7 +58,7 @@ class LandingPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Your personal cinema command center',
+                          l10n.landingTagline,
                           style: GoogleFonts.inter(
                             fontSize: isDesk ? 22 : 18,
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -69,7 +67,7 @@ class LandingPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Track every film. Discover your next obsession.',
+                          l10n.landingSubtitle,
                           style: GoogleFonts.inter(
                             fontSize: isDesk ? 16 : 14,
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
@@ -80,7 +78,7 @@ class LandingPage extends StatelessWidget {
                         if (isDesk)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: _features
+                            children: features
                                 .map((f) => Expanded(
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -95,7 +93,7 @@ class LandingPage extends StatelessWidget {
                           )
                         else
                           Column(
-                            children: _features
+                            children: features
                                 .map((f) => Padding(
                                       padding: const EdgeInsets.only(bottom: 16),
                                       child: _FeatureCard(
@@ -127,7 +125,7 @@ class LandingPage extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'Guest mode: browse and search only. Sign in to save favorites, build watchlists, and track history.',
+                            l10n.guestExplanation,
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
@@ -138,7 +136,7 @@ class LandingPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         Text(
-                          htmlFooter,
+                          l10n.landingFooter,
                           style: TextStyle(
                             fontSize: 11,
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
@@ -158,7 +156,7 @@ class LandingPage extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   onPressed: () => theme.toggle(),
-                  tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                  tooltip: isDark ? l10n.switchToLightMode : l10n.switchToDarkMode,
                 ),
               ),
             ],
@@ -168,8 +166,6 @@ class LandingPage extends StatelessWidget {
     );
   }
 }
-
-const htmlFooter = '\u00a9 2026 CineTrack. Powered by TMDB.';
 
 // ── Logo widget ──────────────────────────────────────────────────
 
@@ -279,18 +275,16 @@ class _FeatureCard extends StatelessWidget {
 class _SignInButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: 260,
       height: 56,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+          context.go('/login');
         },
         child: Text(
-          'Sign In',
+          l10n.signIn,
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
@@ -301,16 +295,14 @@ class _SignInButton extends StatelessWidget {
 class _CreateAccountButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       width: 260,
       height: 56,
       child: OutlinedButton(
         onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const RegisterScreen()),
-          );
+          context.go('/login/register');
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: isDark ? Colors.white70 : const Color(0xFF2C2C2C),
@@ -319,7 +311,7 @@ class _CreateAccountButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Create Account',
+          l10n.createAccount,
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
@@ -330,6 +322,7 @@ class _CreateAccountButton extends StatelessWidget {
 class _GuestButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: 260,
       height: 56,
@@ -339,7 +332,7 @@ class _GuestButton extends StatelessWidget {
         },
         icon: const Icon(Icons.explore_outlined, size: 20),
         label: Text(
-          'Continue as Guest',
+          l10n.continueAsGuest,
           style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(

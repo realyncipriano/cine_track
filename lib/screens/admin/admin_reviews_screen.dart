@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
 import '../../models/admin/admin_review.dart';
 import '../../providers/admin/review_moderation_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/admin/admin_review_card.dart';
 
 class AdminReviewsScreen extends StatefulWidget {
@@ -129,7 +130,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen>
   @override
   Widget build(BuildContext context) {
     final admin = context.watch<ReviewModerationProvider>();
-    final isDesk = Responsive.isDesktop(context);
+    final padding = Responsive.horizontalPadding(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -146,7 +147,17 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen>
                 icon: const Icon(Icons.close),
                 onPressed: _clearSelection,
               )
-            : null,
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  final goRouter = GoRouter.maybeOf(context);
+                  if (goRouter != null) {
+                    goRouter.go('/admin');
+                  } else {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
         actions: [
           if (_selectionMode)
             IconButton(
@@ -175,19 +186,21 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen>
           tabs: _tabs.map((t) => Tab(text: t)).toList(),
         ),
       ),
-      body: admin.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : admin.error != null
-              ? _buildError(admin)
-              : admin.reviews.isEmpty
-                  ? _buildEmpty()
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        _clearSelection();
-                        await _fetchReviews();
-                      },
-                      child: ListView.builder(
-                        padding: EdgeInsets.all(isDesk ? 24 : 16),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: padding),
+        child: admin.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : admin.error != null
+                ? _buildError(admin)
+                : admin.reviews.isEmpty
+                    ? _buildEmpty()
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          _clearSelection();
+                          await _fetchReviews();
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(top: 4, bottom: 8),
                         itemCount: admin.reviews.length,
                         itemBuilder: (_, i) {
                           final r = admin.reviews[i];
@@ -215,6 +228,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen>
                         },
                       ),
                     ),
+    ),
     );
   }
 

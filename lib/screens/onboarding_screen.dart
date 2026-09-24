@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -13,33 +14,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  List<_OnboardingPage> _pages(BuildContext context) => [
+  List<_OnboardingPage> _pages(BuildContext context, AppLocalizations l10n) => [
     _OnboardingPage(
       icon: Icons.explore_rounded,
-      title: 'Discover Movies',
-      description:
-          'Browse thousands of movies from TMDB. Search by genre, year, or popularity to find your next favorite film.',
+      title: l10n.discoverMovies,
+      description: l10n.discoverMoviesDesc,
       color: Theme.of(context).colorScheme.primary,
     ),
     _OnboardingPage(
       icon: Icons.bookmark_rounded,
-      title: 'Track Favorites',
-      description:
-          'Save movies to your favorites, build a watchlist, and keep track of everything you\'ve watched.',
+      title: l10n.trackFavorites,
+      description: l10n.trackFavoritesDesc,
       color: Theme.of(context).colorScheme.secondary,
     ),
     _OnboardingPage(
       icon: Icons.play_circle_fill_rounded,
-      title: 'Start Watching',
-      description:
-          'Stream movies built-in, read reviews, rate films, and explore recommendations tailored just for you.',
+      title: l10n.startWatching,
+      description: l10n.startWatchingDesc,
       color: Theme.of(context).colorScheme.tertiary,
     ),
     _OnboardingPage(
       icon: Icons.person_rounded,
-      title: 'Sign In or Explore',
-      description:
-          'Create an account to sync across devices, or browse as a guest and start watching right away.',
+      title: l10n.signInOrExplore,
+      description: l10n.signInOrExploreDesc,
       color: Theme.of(context).colorScheme.primary,
     ),
   ];
@@ -52,7 +49,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = _pages(context);
+    final l10n = AppLocalizations.of(context)!;
+    final pages = _pages(context, l10n);
     final isLast = _currentPage == pages.length - 1;
 
     return Scaffold(
@@ -66,7 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: TextButton(
                   onPressed: widget.onComplete,
                   child: Text(
-                    'Skip',
+                    l10n.skip,
                     style: GoogleFonts.inter(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                       fontSize: 14,
@@ -108,8 +106,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: double.infinity,
                 height: 56,
                 child: isLast
-                    ? _buildGetStartedButton()
-                    : _buildNextButton(),
+                    ? _buildGetStartedButton(l10n)
+                    : _buildNextButton(l10n),
               ),
             ),
             const SizedBox(height: 32),
@@ -119,7 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildNextButton() {
+  Widget _buildNextButton(AppLocalizations l10n) {
     return ElevatedButton(
       onPressed: () {
         _pageController.nextPage(
@@ -136,7 +134,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         elevation: 4,
       ),
       child: Text(
-        'Next',
+        l10n.next,
         style: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -145,7 +143,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildGetStartedButton() {
+  Widget _buildGetStartedButton(AppLocalizations l10n) {
     return ElevatedButton(
       onPressed: widget.onComplete,
       style: ElevatedButton.styleFrom(
@@ -157,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         elevation: 4,
       ),
       child: Text(
-        'Get Started',
+        l10n.getStarted,
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,

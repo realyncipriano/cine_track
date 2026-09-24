@@ -15,6 +15,7 @@ class AdminReview {
   final String? userUsername;
   final String? userAvatar;
   final String? moderatorName;
+  final String? movieTitle;
 
   const AdminReview({
     required this.id,
@@ -33,6 +34,7 @@ class AdminReview {
     this.userUsername,
     this.userAvatar,
     this.moderatorName,
+    this.movieTitle,
   });
 
   factory AdminReview.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class AdminReview {
       userUsername: json['user_username'] as String?,
       userAvatar: json['user_avatar'] as String?,
       moderatorName: json['moderator_name'] as String?,
+      movieTitle: json['movie_title'] as String?,
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
 import '../../helpers/time_ago.dart';
 import '../../providers/admin/activity_log_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/pagination_bar.dart';
 
 class AdminActivityScreen extends StatefulWidget {
@@ -55,6 +56,17 @@ class _AdminActivityScreenState extends State<AdminActivityScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+                final goRouter = GoRouter.maybeOf(context);
+                if (goRouter != null) {
+                  goRouter.go('/admin');
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+        ),
       ),
       body: Column(
         children: [

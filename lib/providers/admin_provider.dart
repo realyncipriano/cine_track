@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import '../models/admin/admin_movie.dart';
-import '../models/admin/admin_review.dart';
 import '../services/api_endpoints.dart';
 import '../services/api_service.dart';
 
@@ -8,47 +7,6 @@ class AdminProvider extends ChangeNotifier {
   final ApiService _api;
 
   AdminProvider(this._api);
-
-  // ── Dashboard ─────────────────────────────────────────────────
-
-  bool _isLoadingDashboard = false;
-  String? _dashboardError;
-  Map<String, dynamic>? _dashboardStats;
-  List<Map<String, dynamic>> _recentActivity = [];
-  List<AdminReview> _pendingReviewsList = [];
-  List<Map<String, dynamic>> _topMovies = [];
-  Map<String, dynamic>? _analytics;
-
-  bool get isLoadingDashboard => _isLoadingDashboard;
-  String? get dashboardError => _dashboardError;
-  Map<String, dynamic>? get dashboardStats => _dashboardStats;
-  List<Map<String, dynamic>> get recentActivity => _recentActivity;
-  List<AdminReview> get pendingReviewsList => _pendingReviewsList;
-  List<Map<String, dynamic>> get topMovies => _topMovies;
-  Map<String, dynamic>? get analytics => _analytics;
-
-  Future<void> fetchDashboard() async {
-    _isLoadingDashboard = true;
-    _dashboardError = null;
-    notifyListeners();
-    try {
-      final data = await _api.get(ApiEndpoints.dashboard);
-      _dashboardStats = Map<String, dynamic>.from(data['stats'] ?? {});
-      _recentActivity =
-          List<Map<String, dynamic>>.from(data['recent_activity'] ?? []);
-      _pendingReviewsList = (data['pending_reviews_list'] as List<dynamic>?)
-              ?.map((e) => AdminReview.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-      _topMovies = List<Map<String, dynamic>>.from(data['top_movies'] ?? []);
-      _analytics = Map<String, dynamic>.from(data['analytics'] ?? {});
-      _dashboardError = null;
-    } catch (e) {
-      _dashboardError = e.toString();
-    }
-    _isLoadingDashboard = false;
-    notifyListeners();
-  }
 
   // ── Admin Movies ──────────────────────────────────────────────
 

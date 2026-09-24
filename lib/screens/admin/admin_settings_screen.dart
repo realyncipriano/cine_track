@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config.dart';
@@ -37,6 +38,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+                final goRouter = GoRouter.maybeOf(context);
+                if (goRouter != null) {
+                  goRouter.go('/admin');
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+        ),
       ),
       body: prov.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -117,7 +129,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       }),
       const Divider(height: 24),
       _buildDropdown(theme, 'Default User Role', defaultRole,
-          'Role assigned to newly registered users', ['user', 'moderator'], (v) {
+          'Role assigned to newly registered users',           ['user', 'moderator', 'admin'], (v) {
         if (v != null) prov.saveSettings({'default_user_role': v});
       }),
     ]);

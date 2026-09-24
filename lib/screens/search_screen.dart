@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/movie_provider.dart';
 import '../widgets/movie_card.dart';
 import '../widgets/loading_shimmer.dart';
@@ -61,6 +62,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final mp = context.watch<MovieProvider>();
     final results = mp.searchResults;
     final isLoading = mp.isLoading;
@@ -77,13 +79,13 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: _controller,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search movies...',
+                hintText: l10n.searchMoviesHint,
                 hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                 prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
-                        tooltip: 'Clear search',
+                        tooltip: l10n.clearSearch,
                         onPressed: () {
                           _controller.clear();
                           context.read<MovieProvider>().search('');
@@ -137,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(width: 8),
                   PopupMenuButton<int>(
                     icon: Icon(Icons.calendar_today, size: 18, color: _filterYear != null ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-                    tooltip: 'Filter by year',
+                    tooltip: l10n.filterByYear,
                     color: Theme.of(context).cardColor,
                     onSelected: (y) {
                       setState(() => _filterYear = y == _filterYear ? null : y);
@@ -147,16 +149,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   PopupMenuButton<String>(
                     icon: Icon(Icons.sort, size: 18, color: _filterSortBy != 'popularity.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-                    tooltip: 'Sort by',
+                    tooltip: l10n.sortBy,
                     color: Theme.of(context).cardColor,
                     onSelected: (s) {
                       setState(() => _filterSortBy = s);
                       _onFilterChanged();
                     },
                     itemBuilder: (_) => [
-                      PopupMenuItem(value: 'popularity.desc', child: Text('Popular', style: TextStyle(color: _filterSortBy == 'popularity.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
-                      PopupMenuItem(value: 'vote_average.desc', child: Text('Rating', style: TextStyle(color: _filterSortBy == 'vote_average.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
-                      PopupMenuItem(value: 'release_date.desc', child: Text('Newest', style: TextStyle(color: _filterSortBy == 'release_date.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
+                      PopupMenuItem(value: 'popularity.desc', child: Text(l10n.popular, style: TextStyle(color: _filterSortBy == 'popularity.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
+                      PopupMenuItem(value: 'vote_average.desc', child: Text(l10n.rating, style: TextStyle(color: _filterSortBy == 'vote_average.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
+                      PopupMenuItem(value: 'release_date.desc', child: Text(l10n.newest, style: TextStyle(color: _filterSortBy == 'release_date.desc' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
                     ],
                   ),
                 ],
@@ -174,6 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildContent(
       List<dynamic> results, bool isLoading, bool isLoadingMore, String query) {
+    final l10n = AppLocalizations.of(context)!;
     if (query.isEmpty) {
       return Center(
         child: Padding(
@@ -184,7 +187,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Icon(Icons.search, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
               const SizedBox(height: 16),
               Text(
-                'Search millions of movies',
+                l10n.searchMillions,
                 style: GoogleFonts.inter(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
               ),
             ],
@@ -204,7 +207,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'No results for "$query"',
+            l10n.noResultsFor(query),
             style: GoogleFonts.inter(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
           ),
         ),

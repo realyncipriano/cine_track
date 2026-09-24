@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
-import '../screens/landing_page.dart';
 
 class IdleTimerWrapper extends StatefulWidget {
   final Widget child;
@@ -43,6 +44,7 @@ class _IdleTimerWrapperState extends State<IdleTimerWrapper> {
 
   void _showWarningDialog() {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
 
     _warningTimer = Timer(const Duration(minutes: 2), _logout);
 
@@ -52,9 +54,9 @@ class _IdleTimerWrapperState extends State<IdleTimerWrapper> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Session Expiring', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        title: Text(l10n.sessionExpiring, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Text(
-          'Your session will expire in 2 minutes due to inactivity.\n\nTap "Stay Logged In" to continue.',
+          l10n.sessionExpiringDesc,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
         ),
         actions: [
@@ -64,7 +66,7 @@ class _IdleTimerWrapperState extends State<IdleTimerWrapper> {
               _resetTimer();
               Navigator.of(ctx).pop();
             },
-            child: const Text('Stay Logged In'),
+            child: Text(l10n.stayLoggedIn),
           ),
         ],
       ),
@@ -78,10 +80,7 @@ class _IdleTimerWrapperState extends State<IdleTimerWrapper> {
     final auth = context.read<AuthProvider>();
     await auth.logout();
     if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LandingPage()),
-    );
+    context.go('/landing');
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/watchlist_provider.dart';
@@ -6,7 +7,6 @@ import '../widgets/movie_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/loading_shimmer.dart';
 import '../helpers/responsive.dart';
-import '../screens/home_screen.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -159,10 +159,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   subtitle: 'Browse movies and tap the bookmark icon to save them for later',
                   actionLabel: 'Browse Movies',
                   onAction: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
+                    context.go('/browse');
                   },
                 ),
               )

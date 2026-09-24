@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
 import '../../helpers/time_ago.dart';
-import '../../services/api_endpoints.dart';
-import '../../services/api_service.dart';
+import '../../providers/admin/login_audit_provider.dart';
 import '../../widgets/pagination_bar.dart';
 
 class AdminLoginAuditScreen extends StatefulWidget {
@@ -14,12 +14,6 @@ class AdminLoginAuditScreen extends StatefulWidget {
 }
 
 class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
-  final _api = ApiService();
-  List<Map<String, dynamic>> _logs = [];
-  int _total = 0;
-  int _page = 1;
-  bool _isLoading = false;
-  String? _error;
   final _emailController = TextEditingController();
   String? _successFilter;
   final _dateFromController = TextEditingController();
@@ -40,40 +34,20 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
   }
 
   Future<void> _fetch({int page = 1}) async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-      _page = page;
-    });
-    try {
-      final q = <String, String>{
-        'page': page.toString(),
-        'per_page': '30',
-      };
-      if (_emailController.text.isNotEmpty) q['email'] = _emailController.text;
-      if (_successFilter != null) q['success'] = _successFilter!;
-      if (_dateFromController.text.isNotEmpty) q['date_from'] = _dateFromController.text;
-      if (_dateToController.text.isNotEmpty) q['date_to'] = _dateToController.text;
-      final qs = ApiService.buildQueryString(q);
-      final data = await _api.get('${ApiEndpoints.loginAudit}?$qs');
-      _logs = (data['logs'] as List<dynamic>?)
-              ?.map((e) => Map<String, dynamic>.from(e as Map))
-              .toList() ??
-          [];
-      _total = data['total'] as int? ?? 0;
-    } catch (e) {
-      debugPrint('Failed to load login audit: $e');
-      _error = 'Failed to load login audit. Please try again.';
-    }
-    if (mounted) setState(() => _isLoading = false);
+    await context.read<LoginAuditProvider>().fetchLogs(
+      page: page,
+      email: _emailController.text,
+      successFilter: _successFilter,
+      dateFrom: _dateFromController.text.isNotEmpty ? _dateFromController.text : null,
+      dateTo: _dateToController.text.isNotEmpty ? _dateToController.text : null,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final prov = context.watch<LoginAuditProvider>();
     final isDesk = Responsive.isDesktop(context);
     final theme = Theme.of(context);
-
-
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -90,18 +64,18 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
         children: [
           _buildFilters(theme),
           Expanded(
-            child: _isLoading
+            child: prov.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildError()
-                    : _logs.isEmpty
+                : prov.error != null
+                    ? _buildError(prov)
+                    : prov.logs.isEmpty
                         ? _buildEmpty()
-                        : _buildList(theme, isDesk),
+                        : _buildList(prov, theme, isDesk),
           ),
-          if (_total > 30)
+          if (prov.total > 30)
             PaginationBar(
-              currentPage: _page,
-              totalPages: (_total / 30).ceil(),
+              currentPage: prov.page,
+              totalPages: (prov.total / 30).ceil(),
               onPageChanged: (p) => _fetch(page: p),
             ),
         ],
@@ -221,7 +195,7 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
     );
   }
 
-  Widget _buildList(ThemeData theme, bool isDesk) {
+  Widget _buildList(LoginAuditProvider prov, ThemeData theme, bool isDesk) {
     if (isDesk) {
       return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -234,7 +208,7 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
             DataColumn(label: Text('Provider')),
             DataColumn(label: Text('Date')),
           ],
-          rows: _logs.map((log) {
+          rows: prov.logs.map((log) {
             final success = log['success'] == 1 || log['success'] == '1';
             return DataRow(cells: [
               DataCell(Text(log['email'] ?? '', style: GoogleFonts.inter(fontSize: 13))),
@@ -258,9 +232,9 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _logs.length,
+      itemCount: prov.logs.length,
       itemBuilder: (_, i) {
-        final log = _logs[i];
+        final log = prov.logs[i];
         final success = log['success'] == 1 || log['success'] == '1';
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -313,7 +287,7 @@ class _AdminLoginAuditScreenState extends State<AdminLoginAuditScreen> {
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(LoginAuditProvider prov) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,

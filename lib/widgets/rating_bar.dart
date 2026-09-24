@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 class RatingBar extends StatelessWidget {
   final int rating;
@@ -16,6 +17,7 @@ class RatingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (interactive) {
       return _InteractiveRatingBar(
         initialRating: rating,
@@ -25,7 +27,7 @@ class RatingBar extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'Rating: $rating out of 10',
+      label: l10n.ratingOutOf10(rating),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(5, (i) {
@@ -86,9 +88,10 @@ class _InteractiveRatingBarState extends State<_InteractiveRatingBar> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
-      label: 'Rating selector',
-      hint: 'Select a rating from 1 to 10',
+      label: l10n.ratingSelector,
+      hint: l10n.selectRatingHint,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -97,7 +100,7 @@ class _InteractiveRatingBarState extends State<_InteractiveRatingBar> {
             children: List.generate(10, (i) {
               final starValue = i + 1;
               return Semantics(
-                label: 'Rate $starValue out of 10',
+                label: l10n.rateOutOf10(starValue),
                 button: true,
                 child: GestureDetector(
                   onTap: () {
@@ -140,7 +143,7 @@ class _InteractiveRatingBarState extends State<_InteractiveRatingBar> {
           ),
           const SizedBox(height: 4),
           Text(
-            _rating > 0 ? '$_rating / 10' : 'Tap to rate',
+            _rating > 0 ? l10n.ratingDisplay(_rating) : l10n.tapToRate,
             style: TextStyle(
               color: _rating > 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
               fontSize: 12,

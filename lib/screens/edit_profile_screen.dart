@@ -87,7 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (name.isEmpty || email.isEmpty) return;
     if (!email.contains('@')) {
-      setState(() => _error = 'Enter a valid email');
+      setState(() => _error = AppLocalizations.of(context)!.invalidEmail);
       return;
     }
 
@@ -133,7 +133,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Icon(Icons.check_circle, size: 80, color: Colors.greenAccent),
               const SizedBox(height: 16),
-              Text('Profile updated!', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+              Text(l10n.profileUpdated, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
         ),
@@ -148,7 +148,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Edit Profile', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
+        title: Text(l10n.editProfile, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -159,7 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Name',
+                  labelText: l10n.nameLabel,
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -170,8 +170,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: 'Email',
-                  helperText: 'Changing email will require re-verification',
+                  labelText: l10n.emailLabel,
+                  helperText: l10n.changeEmailWarning,
                   helperStyle: GoogleFonts.inter(fontSize: 11, color: Colors.orangeAccent),
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
@@ -183,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  labelText: 'Phone',
+                  labelText: l10n.phoneLabel,
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -208,7 +208,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 readOnly: true,
                 onTap: _pickDate,
                 decoration: InputDecoration(
-                  labelText: 'Date of Birth',
+                  labelText: l10n.dateOfBirthLabel,
                   suffixIcon: const Icon(Icons.calendar_today, size: 18),
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
@@ -220,7 +220,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 initialValue: _selectedCountry,
                 dropdownColor: Theme.of(context).cardColor,
                 decoration: InputDecoration(
-                  labelText: 'Country',
+                  labelText: l10n.countryLabel,
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -231,8 +231,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 16),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text('Marketing emails', style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
-                subtitle: Text('Receive recommendations and updates', style: GoogleFonts.inter(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
+                title: Text(l10n.marketingEmails, style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+                subtitle: Text(l10n.marketingEmailsSubtitle, style: GoogleFonts.inter(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
                 value: _marketingOptIn,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (v) => setState(() => _marketingOptIn = v),
@@ -240,7 +240,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               if (user?.emailVerified == false) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Email not verified',
+                  l10n.emailNotVerifiedWarning,
                   style: GoogleFonts.inter(fontSize: 12, color: Colors.orangeAccent),
                 ),
               ],
@@ -265,7 +265,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Save'),
+                        child: Text(l10n.save),
                       ),
                     ),
                   ),
@@ -280,7 +280,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Cancel'),
+                        child: Text(l10n.cancel),
                       ),
                     ),
                   ),

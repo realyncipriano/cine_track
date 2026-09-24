@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/movie.dart';
 import '../services/api_service.dart';
+import '../services/api_endpoints.dart';
 import '../services/auth_service.dart';
 
 class HistoryProvider extends ChangeNotifier {
@@ -80,7 +81,7 @@ class HistoryProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await _api.get('/history/list.php?page=1&per_page=10&sort_by=$_sortBy');
+      final data = await _api.get('${ApiEndpoints.historyList}?page=1&per_page=10&sort_by=$_sortBy');
       final list = data['history'] as List<dynamic>;
       _total = data['total'] as int? ?? list.length;
       _history.clear();
@@ -106,7 +107,7 @@ class HistoryProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await _api.get('/history/list.php?page=$_page&per_page=20&sort_by=$_sortBy');
+      final data = await _api.get('${ApiEndpoints.historyList}?page=$_page&per_page=20&sort_by=$_sortBy');
       final list = data['history'] as List<dynamic>;
       _total = data['total'] as int? ?? 0;
       for (final item in list) {
@@ -130,7 +131,7 @@ class HistoryProvider extends ChangeNotifier {
     // emitting a 401 on every movie open. Logged-in flow is unchanged.
     if (!_authService.isAuthenticated) return;
     try {
-      await _api.post('/history/add.php', movie.toJson());
+      await _api.post(ApiEndpoints.historyAdd, movie.toJson());
     } catch (e) {
       debugPrint('addToHistory error: $e');
     }
@@ -138,7 +139,7 @@ class HistoryProvider extends ChangeNotifier {
 
   Future<void> removeFromHistory(int movieId) async {
     try {
-      await _api.post('/history/delete.php', {'movie_id': movieId});
+      await _api.post(ApiEndpoints.historyDelete, {'movie_id': movieId});
       _history.removeWhere((m) => m.id == movieId);
       _total = _total > 0 ? _total - 1 : 0;
       _hasMore = _history.length < _total;
@@ -152,7 +153,7 @@ class HistoryProvider extends ChangeNotifier {
 
   Future<void> clearHistory() async {
     try {
-      await _api.post('/history/clear.php', {});
+      await _api.post(ApiEndpoints.historyClear, {});
       _history.clear();
       _page = 1;
       _hasMore = true;

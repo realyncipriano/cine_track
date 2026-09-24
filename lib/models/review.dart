@@ -7,6 +7,9 @@ class Review {
   final String reviewText;
   final String createdAt;
   final String updatedAt;
+  final int likesCount;
+  final bool isLiked;
+  final String status;
 
   Review({
     required this.id,
@@ -17,6 +20,9 @@ class Review {
     required this.reviewText,
     required this.createdAt,
     required this.updatedAt,
+    this.likesCount = 0,
+    this.isLiked = false,
+    this.status = 'approved',
   });
 
   factory Review.fromJson(Map<String, dynamic> json) {
@@ -29,6 +35,29 @@ class Review {
       reviewText: json['review_text'] as String? ?? '',
       createdAt: json['created_at'] as String? ?? '',
       updatedAt: json['updated_at'] as String? ?? '',
+      likesCount: json['likes_count'] is int ? json['likes_count'] as int : int.tryParse(json['likes_count']?.toString() ?? '') ?? 0,
+      isLiked: json['is_liked'] == true || json['is_liked'] == 1,
+      status: json['status'] as String? ?? 'approved',
+    );
+  }
+
+  Review copyWith({
+    int? likesCount,
+    bool? isLiked,
+    String? status,
+  }) {
+    return Review(
+      id: id,
+      userId: userId,
+      userName: userName,
+      movieId: movieId,
+      rating: rating,
+      reviewText: reviewText,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      likesCount: likesCount ?? this.likesCount,
+      isLiked: isLiked ?? this.isLiked,
+      status: status ?? this.status,
     );
   }
 }

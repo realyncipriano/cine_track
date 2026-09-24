@@ -3,10 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
-import '../../providers/admin_provider.dart';
+import '../../providers/admin/dashboard_provider.dart';
+import '../../models/admin/analytics.dart';
 import '../../widgets/admin/admin_stat_card.dart';
 import '../../widgets/admin/admin_activity_tile.dart';
 import '../../widgets/admin/admin_pending_review_card.dart';
+import 'admin_users_screen.dart';
+import 'admin_reviews_screen.dart';
+import 'admin_settings_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -20,7 +24,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AdminProvider>().fetchDashboard();
+      context.read<DashboardProvider>().fetchDashboard();
     });
   }
 
@@ -30,25 +34,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final admin = context.watch<AdminProvider>();
+    final dashboard = context.watch<DashboardProvider>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: admin.isLoadingDashboard
+      body: dashboard.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : admin.dashboardError != null
-              ? _buildError(admin)
+          : dashboard.error != null
+              ? _buildError(dashboard)
               : RefreshIndicator(
-                  onRefresh: () => admin.fetchDashboard(),
+                  onRefresh: () => dashboard.fetchDashboard(),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: _buildContent(admin),
+                    child: _buildContent(dashboard),
                   ),
                 ),
     );
   }
 
-  Widget _buildContent(AdminProvider admin) {
+  Widget _buildContent(DashboardProvider dashboard) {
     final isDesk = Responsive.isDesktop(context);
     final padding = Responsive.horizontalPadding(context);
     final theme = Theme.of(context);
@@ -62,14 +66,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // ── Stat Cards ──
         Padding(
           padding: EdgeInsets.symmetric(horizontal: padding),
-          child: _buildStatGrid(admin, isDesk),
+          child: _buildStatGrid(dashboard, isDesk),
         ),
         SizedBox(height: isDesk ? 32 : 28),
         // ── Two-column (desktop) or stacked (mobile) sections ──
-        _buildMiddleSection(admin, isDesk, padding),
+        _buildMiddleSection(dashboard, isDesk, padding),
         SizedBox(height: isDesk ? 32 : 28),
         // ── Analytics & Top Movies ──
-        _buildAnalyticsSection(admin, isDesk, padding),
+        _buildAnalyticsSection(dashboard, isDesk, padding),
         SizedBox(height: isDesk ? 32 : 28),
         // ── Quick Actions ──
         Padding(
@@ -205,14 +209,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Stat Cards Grid
   // ────────────────────────────────────────────────────────────────
 
-  Widget _buildStatGrid(AdminProvider admin, bool isDesk) {
-    final stats = admin.dashboardStats ?? {};
+  Widget _buildStatGrid(DashboardProvider dashboard, bool isDesk) {
+    final stats = dashboard.dashboardStats;
     final theme = Theme.of(context);
 
     final cards = [
       AdminStatCard(
         icon: Icons.people_outline,
-        count: _fmt(stats['total_users']),
+        count: _fmt(stats?.totalUsers),
         label: 'Total Users',
         color: theme.colorScheme.primary,
         trend: 12.5,
@@ -220,19 +224,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       AdminStatCard(
         icon: Icons.person_add_outlined,
-        count: _fmt(stats['new_today']),
+        count: _fmt(stats?.newToday),
         label: 'New Today',
         color: Colors.green,
       ),
       AdminStatCard(
         icon: Icons.trending_up,
-        count: _fmt(stats['active_7d']),
+        count: _fmt(stats?.active7d),
         label: 'Active (7d)',
         color: const Color(0xFF5B8DEF),
       ),
       AdminStatCard(
         icon: Icons.rate_review_outlined,
-        count: _fmt(stats['total_reviews']),
+        count: _fmt(stats?.totalReviews),
         label: 'Total Reviews',
         color: Colors.amber.shade700,
       ),
@@ -268,7 +272,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Middle Section — Pending Reviews + Recent Activity
   // ────────────────────────────────────────────────────────────────
 
-  Widget _buildMiddleSection(AdminProvider admin, bool isDesk, double padding) {
+  Widget _buildMiddleSection(DashboardProvider dashboard, bool isDesk, double padding) {
     if (isDesk) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: padding),
@@ -277,12 +281,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           children: [
             Expanded(
               flex: 5,
-              child: _buildPendingReviews(admin),
+              child: _buildPendingReviews(dashboard),
             ),
             const SizedBox(width: 20),
             Expanded(
               flex: 6,
-              child: _buildRecentActivity(admin),
+              child: _buildRecentActivity(dashboard),
             ),
           ],
         ),
@@ -293,12 +297,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       children: [
         Padding(
           padding: EdgeInsets.symmetric(horizontal: padding),
-          child: _buildPendingReviews(admin),
+          child: _buildPendingReviews(dashboard),
         ),
         const SizedBox(height: 28),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: padding),
-          child: _buildRecentActivity(admin),
+          child: _buildRecentActivity(dashboard),
         ),
       ],
     );
@@ -306,9 +310,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ── Pending Reviews ──────────────────────────────────────────
 
-  Widget _buildPendingReviews(AdminProvider admin) {
+  Widget _buildPendingReviews(DashboardProvider dashboard) {
     final theme = Theme.of(context);
-    final reviews = admin.pendingReviewsList;
+    final reviews = dashboard.pendingReviewsList;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,9 +397,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ── Recent Activity ──────────────────────────────────────────
 
-  Widget _buildRecentActivity(AdminProvider admin) {
+  Widget _buildRecentActivity(DashboardProvider dashboard) {
     final theme = Theme.of(context);
-    final activity = admin.recentActivity;
+    final activity = dashboard.recentActivity;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,10 +481,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Analytics & Top Movies Section
   // ────────────────────────────────────────────────────────────────
 
-  Widget _buildAnalyticsSection(AdminProvider admin, bool isDesk, double padding) {
+  Widget _buildAnalyticsSection(DashboardProvider dashboard, bool isDesk, double padding) {
     final theme = Theme.of(context);
-    final analytics = admin.analytics;
-    final topMovies = admin.topMovies;
+    final analytics = dashboard.analytics;
+    final topMovies = dashboard.topMovies;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding),
@@ -619,7 +623,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ── Registration Trend Chart ──────────────────────────────────
 
-  Widget _buildRegistrationChart(ThemeData theme, Map<String, dynamic>? analytics) {
+  Widget _buildRegistrationChart(ThemeData theme, Analytics? analytics) {
     if (analytics == null) {
       return _buildEmptyBox(
         icon: Icons.bar_chart_outlined,
@@ -628,30 +632,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
     }
 
-    final registrations = analytics['registrations'] is Map<String, dynamic> ? analytics['registrations'] as Map<String, dynamic> : null;
-    final reviewsPerDay = analytics['reviews_per_day'] is Map<String, dynamic> ? analytics['reviews_per_day'] as Map<String, dynamic> : null;
-    final reviewStatuses = analytics['review_statuses'] is Map<String, dynamic> ? analytics['review_statuses'] as Map<String, dynamic> : null;
-
     return Column(
       children: [
         _buildBarChart(
           theme,
           title: 'New Registrations (14 days)',
-          values: registrations?['values'] as List<dynamic>? ?? [],
-          dates: registrations?['dates'] as List<dynamic>? ?? [],
+          values: analytics.registrations.values,
+          dates: analytics.registrations.dates,
           barColor: Colors.green,
         ),
         const SizedBox(height: 16),
         _buildBarChart(
           theme,
           title: 'Reviews Per Day (14 days)',
-          values: reviewsPerDay?['values'] as List<dynamic>? ?? [],
-          dates: reviewsPerDay?['dates'] as List<dynamic>? ?? [],
+          values: analytics.reviewsPerDay.values,
+          dates: analytics.reviewsPerDay.dates,
           barColor: Colors.amber,
         ),
-        if (reviewStatuses != null && reviewStatuses.isNotEmpty) ...[
+        if (analytics.reviewStatuses.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _buildReviewStatusPie(theme, reviewStatuses),
+          _buildReviewStatusPie(theme, analytics.reviewStatuses),
         ],
       ],
     );
@@ -659,8 +659,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ── Review Status Breakdown ───────────────────────────────────
 
-  Widget _buildReviewStatusPie(ThemeData theme, Map<String, dynamic> statuses) {
-    final total = statuses.values.fold<int>(0, (a, b) => a + (b as int));
+  Widget _buildReviewStatusPie(ThemeData theme, Map<String, int> statuses) {
+    final total = statuses.values.fold<int>(0, (a, b) => a + b);
     if (total == 0) return const SizedBox.shrink();
 
     final statusColors = <String, Color>{
@@ -711,7 +711,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               height: 24,
               child: Row(
                 children: statuses.entries.map((e) {
-                  final pct = (e.value as int) / total;
+                  final pct = e.value / total;
                   return Expanded(
                     flex: (pct * 100).round().clamp(1, 100),
                     child: Container(
@@ -727,7 +727,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             spacing: 16,
             runSpacing: 8,
             children: statuses.entries.map((e) {
-              final pct = total > 0 ? ((e.value as int) / total * 100).toStringAsFixed(0) : '0';
+              final pct = total > 0 ? (e.value / total * 100).toStringAsFixed(0) : '0';
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -970,7 +970,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: action.route != null
-              ? () => context.go(action.route!)
+              ? () => _navigateToAdmin(context, action.route!)
               : null,
           child: Container(
             padding: const EdgeInsets.fromLTRB(4, 14, 16, 14),
@@ -1095,7 +1095,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildError(AdminProvider admin) {
+  Widget _buildError(DashboardProvider dashboard) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1118,7 +1118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              admin.dashboardError ?? '',
+              dashboard.error ?? '',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: Theme.of(context)
@@ -1130,7 +1130,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => admin.fetchDashboard(),
+              onPressed: () => dashboard.fetchDashboard(),
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),
@@ -1140,10 +1140,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  String _fmt(dynamic val) {
+  void _navigateToAdmin(BuildContext context, String route) {
+    final goRouter = GoRouter.maybeOf(context);
+    if (goRouter != null) {
+      goRouter.go(route);
+    } else {
+      final screens = <String, WidgetBuilder>{
+        '/admin/reviews': (_) => const AdminReviewsScreen(),
+        '/admin/users': (_) => const AdminUsersScreen(),
+        '/admin/settings': (_) => const AdminSettingsScreen(),
+      };
+      final builder = screens[route];
+      if (builder != null) {
+        Navigator.of(context).push(MaterialPageRoute(builder: builder));
+      }
+    }
+  }
+
+  String _fmt(int? val) {
     if (val == null) return '0';
-    if (val is int) return val.toString();
-    if (val is double) return val.toInt().toString();
     return val.toString();
   }
 }

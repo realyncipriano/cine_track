@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config.dart';
 import '../models/movie.dart';
+import '../models/person.dart';
 import '../models/trailer_video.dart';
 
 class TmdbService {
@@ -131,6 +132,43 @@ class TmdbService {
 
   Future<List<Movie>> getRecommendations(int movieId, {int page = 1}) =>
       _fetchMovies('/movie/$movieId/recommendations', page: page);
+
+  Future<Person> getPerson(int personId) async {
+    final params = <String, String>{
+      'api_key': _apiKey,
+      'language': 'en-US',
+    };
+
+    final uri = Uri.parse('${AppConfig.tmdbBaseUrl}/person/$personId')
+        .replace(queryParameters: params);
+
+    final response = await _client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('TMDB API error: ${response.statusCode}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Person.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> getPersonMovieCredits(int personId) async {
+    final params = <String, String>{
+      'api_key': _apiKey,
+      'language': 'en-US',
+    };
+
+    final uri = Uri.parse('${AppConfig.tmdbBaseUrl}/person/$personId/movie_credits')
+        .replace(queryParameters: params);
+
+    final response = await _client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('TMDB API error: ${response.statusCode}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 
   Future<List<TrailerVideo>> getMovieVideos(int movieId) async {
     final params = <String, String>{

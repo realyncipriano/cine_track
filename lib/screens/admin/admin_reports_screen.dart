@@ -1,7 +1,9 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../helpers/responsive.dart';
 import '../../providers/admin/analytics_provider.dart';
 import '../../widgets/admin/date_range_chip.dart';
@@ -37,6 +39,24 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download_outlined),
+            tooltip: 'Export CSV',
+            onPressed: () async {
+              final url = prov.exportUrl;
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Could not open: $url', style: GoogleFonts.inter(fontSize: 12)),
+                  duration: const Duration(seconds: 5),
+                ));
+              }
+            },
+          ),
+        ],
       ),
       body: prov.isLoading
           ? const Center(child: CircularProgressIndicator())

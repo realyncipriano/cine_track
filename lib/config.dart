@@ -15,6 +15,13 @@ class AppConfig {
   static String get apiBaseUrl => _baseUrl;
 
   static Future<void> initialize() async {
+    const compileUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (compileUrl.isNotEmpty) {
+      _baseUrl = compileUrl;
+      debugPrint('AppConfig: from dart-define → baseUrl=$_baseUrl');
+      return;
+    }
+
     final isEmulator = await _isAndroidEmulator();
     if (isEmulator) {
       _baseUrl = _emulatorUrl;
@@ -38,7 +45,7 @@ class AppConfig {
     if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       final androidInfo = await DeviceInfoPlugin().androidInfo;
-      return !(androidInfo.isPhysicalDevice ?? true);
+      return !androidInfo.isPhysicalDevice;
     } catch (_) {
       return false;
     }

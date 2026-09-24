@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
 import '../../models/admin/admin_movie.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/admin_provider.dart';
 
 class AdminMoviesScreen extends StatefulWidget {
@@ -56,6 +57,17 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+                final goRouter = GoRouter.maybeOf(context);
+                if (goRouter != null) {
+                  goRouter.go('/admin');
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+        ),
       ),
       body: Column(
         children: [

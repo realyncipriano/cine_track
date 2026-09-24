@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,11 +11,17 @@ import '../providers/movie_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../providers/reviews_provider.dart';
+import '../providers/review_reply_provider.dart';
 import '../widgets/movie_card.dart';
 import '../widgets/rating_bar.dart';
 import '../widgets/review_replies_section.dart';
+import '../widgets/user_mention_tile.dart';
+import '../widgets/like_button.dart';
+import '../helpers/share_helper.dart';
+import 'add_to_list_sheet.dart';
 import 'stream_player_screen.dart';
 import 'trailer_player_screen.dart';
+import '../l10n/app_localizations.dart';
 
 class MovieDetailsScreen extends StatefulWidget {
   final Movie movie;
@@ -41,6 +48,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ReviewsProvider>().clear();
+        context.read<ReviewReplyProvider>().clear();
+      }
+    });
     _fetchDetails();
     _fetchCredits();
     _fetchSimilar();
@@ -64,7 +77,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         setState(() => _detailed = details);
       }
     } catch (e) {
-      if (mounted) setState(() => _fetchError = 'Failed to load movie details');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _fetchError = l10n.failedToLoadMovie);
+      }
     }
   }
 
@@ -76,7 +92,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         setState(() => _cast = cast.take(15).toList());
       }
     } catch (e) {
-      if (mounted) setState(() => _fetchError = _fetchError ?? 'Failed to load cast');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _fetchError = _fetchError ?? l10n.failedToLoadCast);
+      }
     }
   }
 
@@ -88,7 +107,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         setState(() => _similarMovies = similar);
       }
     } catch (e) {
-      if (mounted) setState(() => _fetchError = _fetchError ?? 'Failed to load similar movies');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _fetchError = _fetchError ?? l10n.failedToLoadSimilar);
+      }
     }
   }
 
@@ -100,7 +122,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         setState(() => _recommendedMovies = recommended);
       }
     } catch (e) {
-      if (mounted) setState(() => _fetchError = _fetchError ?? 'Failed to load recommendations');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _fetchError = _fetchError ?? l10n.failedToLoadRecommendations);
+      }
     }
   }
 
@@ -112,7 +137,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         setState(() => _teaser = teaser);
       }
     } catch (e) {
-      if (mounted) setState(() => _fetchError = _fetchError ?? 'Failed to load trailer');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _fetchError = _fetchError ?? l10n.failedToLoadTrailer);
+      }
     }
   }
 
@@ -150,6 +178,29 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Future<void> _deleteReview() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Delete review', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text('Are you sure you want to delete your review?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            child: Text(l10n.deleteAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
     final rp = context.read<ReviewsProvider>();
     await rp.deleteReview(widget.movie.id);
     if (mounted) {
@@ -161,15 +212,69 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     }
   }
 
-  String _formatRuntime(int? minutes) {
-    if (minutes == null) return 'N/A';
+  Future<void> _reportReview(int reviewId) async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text(l10n.reportReview, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          maxLength: 500,
+          decoration: InputDecoration(
+            hintText: l10n.reportReasonHint,
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
+            filled: true,
+            fillColor: Theme.of(context).scaffoldBackgroundColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: Text(l10n.submit, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (reason == null || reason.trim().isEmpty) return;
+    if (!mounted) return;
+
+    final rp = context.read<ReviewsProvider>();
+    final success = await rp.reportReview(reviewId, reason.trim());
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? l10n.reviewReported : l10n.failedToReportReview),
+          backgroundColor: success ? Colors.greenAccent : Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  String _formatRuntime(int? minutes, AppLocalizations l10n) {
+    if (minutes == null) return l10n.notAvailable;
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    return h > 0 ? '${h}h ${m}m' : '${m}m';
+    return h > 0 ? '$h${l10n.hoursAbbr} $m${l10n.minutesAbbr}' : '$m${l10n.minutesAbbr}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final movie = _detailed ?? widget.movie;
     final fp = context.watch<FavoritesProvider>();
     final wp = context.watch<WatchlistProvider>();
@@ -248,7 +353,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 ],
                                 if (movie.runtime != null) ...[
                                   Text(
-                                    '${_formatRuntime(movie.runtime)} min',
+                                    '${_formatRuntime(movie.runtime, l10n)}${l10n.minutesSuffix}',
                                     style: GoogleFonts.inter(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                                   ),
                                   const SizedBox(width: 12),
@@ -296,12 +401,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Overview',
+                    l10n.overview,
                     style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    movie.overview.isNotEmpty ? movie.overview : 'No overview available.',
+                    movie.overview.isNotEmpty ? movie.overview : l10n.noOverview,
                     style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), height: 1.5),
                   ),
                   if (_fetchError != null)
@@ -327,7 +432,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           TextButton.icon(
                             onPressed: _retryFetch,
                             icon: const Icon(Icons.refresh, size: 16),
-                            label: Text('Retry', style: GoogleFonts.inter(fontSize: 12)),
+                            label: Text(l10n.retry, style: GoogleFonts.inter(fontSize: 12)),
                             style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
                           ),
                         ],
@@ -352,7 +457,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         },
                         icon: const Icon(Icons.play_circle_outline, size: 20),
                         label: Text(
-                          _teaser!.isTeaser ? 'Watch Teaser' : 'Watch Trailer',
+                          _teaser!.isTeaser ? l10n.watchTeaser : l10n.watchTrailer,
                           style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -377,7 +482,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               fp.toggleFavorite(movie);
                             },
                             icon: Icon(isFav ? Icons.favorite : Icons.favorite_outline, size: 18),
-                            label: Text(isFav ? 'Favorited' : 'Favorite'),
+                            label: Text(isFav ? l10n.favorited : l10n.favoriteAction),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isFav ? Theme.of(context).colorScheme.primary : Theme.of(context).cardColor,
                               foregroundColor: isFav ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -388,7 +493,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: SizedBox(
                           height: 48,
@@ -397,10 +502,64 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               wp.toggleWatchlist(movie);
                             },
                             icon: Icon(isWl ? Icons.bookmark : Icons.bookmark_outline, size: 18),
-                            label: Text(isWl ? 'Saved' : 'Watchlist'),
+                            label: Text(isWl ? l10n.saved : l10n.watchlistAction),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isWl ? Theme.of(context).colorScheme.primary : Theme.of(context).cardColor,
                               foregroundColor: isWl ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                ),
+                                builder: (_) => AddToListSheet(movie: movie),
+                              );
+                            },
+                            icon: const Icon(Icons.playlist_add, size: 18),
+                            label: Text(l10n.listAction),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).cardColor,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              ShareHelper.shareMovie(
+                                movieId: movie.id,
+                                title: movie.title,
+                                year: movie.releaseDate.length >= 4
+                                    ? movie.releaseDate.substring(0, 4)
+                                    : null,
+                              );
+                            },
+                            icon: const Icon(Icons.share, size: 18),
+                            label: Text(l10n.share),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).cardColor,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -424,7 +583,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         );
                       },
                       icon: const Icon(Icons.play_arrow, size: 24),
-                      label: Text('Watch Now', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                      label: Text(l10n.watchNow, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -439,7 +598,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   if (_cast.isNotEmpty) ...[
                     const SizedBox(height: 28),
                     Text(
-                      'Cast',
+                      l10n.cast,
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 12),
@@ -451,7 +610,9 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         separatorBuilder: (_, _) => const SizedBox(width: 12),
                         itemBuilder: (context, index) {
                           final member = _cast[index];
-                          return SizedBox(
+                          return GestureDetector(
+                            onTap: () => context.go('/person/${member.id}'),
+                            child: SizedBox(
                             width: 80,
                             child: Column(
                               children: [
@@ -482,6 +643,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 ),
                               ],
                             ),
+                          ),
                           );
                         },
                       ),
@@ -490,7 +652,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   if (_similarMovies.isNotEmpty) ...[
                     const SizedBox(height: 28),
                     Text(
-                      'Similar Movies',
+                      l10n.similarMovies,
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 12),
@@ -512,7 +674,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   if (_recommendedMovies.isNotEmpty) ...[
                     const SizedBox(height: 28),
                     Text(
-                      'Recommendations',
+                      l10n.recommendationSection,
                       style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 12),
@@ -542,6 +704,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Widget _buildReviewsSection(ReviewsProvider rp) {
+    final l10n = AppLocalizations.of(context)!;
     if (rp.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -552,7 +715,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           Row(
             children: [
               Text(
-                'Ratings & Reviews',
+                l10n.ratingsReviews,
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
               ),
               if (rp.averageRating != null) ...[
@@ -595,7 +758,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               _reviewController.text = rp.userReview!.reviewText;
             }),
             icon: const Icon(Icons.close, size: 16),
-            label: Text('Cancel', style: GoogleFonts.inter(fontSize: 13)),
+            label: Text(l10n.cancel, style: GoogleFonts.inter(fontSize: 13)),
             style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
           ),
         if (rp.reviews.where((r) => r.id != rp.userReview?.id).isNotEmpty) ...[
@@ -612,6 +775,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Widget _buildUserReviewCard(Review review) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -626,9 +790,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           Row(
             children: [
               RatingBar(rating: review.rating, starSize: 18),
+              const SizedBox(width: 8),
+              _statusChip(review.status),
               const Spacer(),
               Text(
-                'Your review',
+                l10n.yourReview,
                 style: GoogleFonts.inter(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
               ),
             ],
@@ -640,7 +806,19 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               style: GoogleFonts.inter(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
             ),
           ],
-          ReviewRepliesSection(reviewId: review.id),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              LikeButton(
+                reviewId: review.id,
+                likesCount: review.likesCount,
+                isLiked: review.isLiked,
+                onToggle: () => context.read<ReviewsProvider>().toggleLike(review.id),
+              ),
+              const Spacer(),
+              ReviewRepliesSection(reviewId: review.id),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -652,14 +830,14 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   _reviewController.text = review.reviewText;
                 }),
                 icon: const Icon(Icons.edit, size: 14),
-                label: Text('Edit', style: GoogleFonts.inter(fontSize: 12)),
+                label: Text(l10n.editAction, style: GoogleFonts.inter(fontSize: 12)),
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
               ),
               const SizedBox(width: 4),
               TextButton.icon(
                 onPressed: _deleteReview,
                 icon: const Icon(Icons.delete, size: 14),
-                label: Text('Delete', style: GoogleFonts.inter(fontSize: 12)),
+                label: Text(l10n.deleteAction, style: GoogleFonts.inter(fontSize: 12)),
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
               ),
             ],
@@ -670,6 +848,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Widget _buildReviewForm(ReviewsProvider rp) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -694,7 +873,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             maxLines: 3,
             maxLength: 500,
             decoration: InputDecoration(
-              hintText: 'Write your review (optional)',
+              hintText: l10n.writeReviewHint,
               hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
               filled: true,
               fillColor: Theme.of(context).scaffoldBackgroundColor,
@@ -727,7 +906,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                     )
                   : Text(
-                      rp.userReview != null ? 'Update Review' : 'Submit Review',
+                      rp.userReview != null ? l10n.updateReview : l10n.submitReview,
                       style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                     ),
             ),
@@ -738,6 +917,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Widget _buildOtherReviewCard(Review review) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -750,22 +930,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                child: Text(
-                  review.userName.isNotEmpty ? review.userName[0].toUpperCase() : '?',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                review.userName,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+              UserMentionTile(
+                userId: review.userId,
+                userName: review.userName,
+                avatarSize: 28,
+                fontSize: 13,
               ),
               const Spacer(),
               RatingBar(rating: review.rating, starSize: 14),
@@ -779,8 +948,82 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             ),
           ],
           const SizedBox(height: 4),
-          ReviewRepliesSection(reviewId: review.id),
+          Row(
+            children: [
+              LikeButton(
+                reviewId: review.id,
+                likesCount: review.likesCount,
+                isLiked: review.isLiked,
+                onToggle: () => context.read<ReviewsProvider>().toggleLike(review.id),
+              ),
+              const Spacer(),
+              ReviewRepliesSection(reviewId: review.id),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(Icons.share, size: 16,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
+                tooltip: l10n.shareReview,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  final movie = _detailed ?? widget.movie;
+                  ShareHelper.shareReview(
+                    userName: review.userName,
+                    movieTitle: movie.title,
+                    rating: review.rating,
+                    reviewText: review.reviewText,
+                    movieId: movie.id,
+                  );
+                },
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _reportReview(review.id),
+              icon: Icon(Icons.flag, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
+              label: Text(l10n.reportAction, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _statusChip(String status) {
+    final theme = Theme.of(context);
+    Color bgColor;
+    Color textColor;
+    String label;
+
+    switch (status) {
+      case 'pending':
+        bgColor = const Color(0xFFF0883E).withValues(alpha: 0.15);
+        textColor = const Color(0xFFF0883E);
+        label = 'Pending';
+        break;
+      case 'rejected':
+        bgColor = theme.colorScheme.error.withValues(alpha: 0.15);
+        textColor = theme.colorScheme.error;
+        label = 'Rejected';
+        break;
+      default:
+        bgColor = const Color(0xFF2EA043).withValues(alpha: 0.15);
+        textColor = const Color(0xFF2EA043);
+        label = 'Approved';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
       ),
     );
   }

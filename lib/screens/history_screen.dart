@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,7 +7,6 @@ import '../providers/history_provider.dart';
 import '../widgets/empty_state.dart';
 import 'movie_details_screen.dart';
 import '../widgets/loading_shimmer.dart';
-import '../screens/home_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -252,10 +252,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   subtitle: 'Movies you watch will appear here',
                   actionLabel: 'Browse Movies',
                   onAction: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
+                    context.go('/browse');
                   },
                 ),
               )

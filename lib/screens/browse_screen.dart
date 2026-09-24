@@ -12,6 +12,8 @@ import 'movie_details_screen.dart';
 import 'see_all_screen.dart';
 import '../widgets/loading_shimmer.dart';
 import '../helpers/responsive.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 
 class BrowseScreen extends StatefulWidget {
   const BrowseScreen({super.key});
@@ -69,6 +71,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
     final mp = context.watch<MovieProvider>();
     final hp = context.watch<HistoryProvider>();
     final recentlyWatched = hp.recentlyWatched;
+    final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
       child: RefreshIndicator(
@@ -82,7 +85,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                 child: Text(
-                  'Browse Movies',
+                  l10n.browseMovies,
                   style: GoogleFonts.inter(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -127,7 +130,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                           Icon(Icons.history, size: 18, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 6),
                           Text(
-                            'Recently Watched',
+                            l10n.recentlyWatched,
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -241,16 +244,16 @@ class _BrowseScreenState extends State<BrowseScreen> {
             if (mp.selectedGenreId != null)
               _buildGenreGrid(mp)
             else ...[
-              _buildSection(context, 'Trending Now', mp.trending, mp.isLoading, mp,
-                  onLoadMore: () => _navigateToSeeAll('Trending Now', mp.trending, mp.loadMoreTrending, mp.hasMoreTrending, mp.isLoadingMore), hasMore: mp.hasMoreTrending),
-              _buildSection(context, 'Now Playing', mp.nowPlaying, mp.isLoading, mp,
-                  onLoadMore: () => _navigateToSeeAll('Now Playing', mp.nowPlaying, mp.loadMoreNowPlaying, mp.hasMoreNowPlaying, mp.isLoadingMore), hasMore: mp.hasMoreNowPlaying),
-              _buildSection(context, 'Popular', mp.popular, mp.isLoading, mp,
-                  onLoadMore: () => _navigateToSeeAll('Popular', mp.popular, mp.loadMorePopular, mp.hasMorePopular, mp.isLoadingMore), hasMore: mp.hasMorePopular),
-              _buildSection(context, 'Coming Soon', mp.upcoming, mp.isLoading, mp,
-                  onLoadMore: () => _navigateToSeeAll('Coming Soon', mp.upcoming, mp.loadMoreUpcoming, mp.hasMoreUpcoming, mp.isLoadingMore), hasMore: mp.hasMoreUpcoming),
-              _buildSection(context, 'Top Rated', mp.topRated, mp.isLoading, mp,
-                  onLoadMore: () => _navigateToSeeAll('Top Rated', mp.topRated, mp.loadMoreTopRated, mp.hasMoreTopRated, mp.isLoadingMore), hasMore: mp.hasMoreTopRated),
+              _buildSection(context, l10n.trendingNow, mp.trending, mp.isLoading, mp,
+                  onLoadMore: () => _navigateToSeeAll(l10n.trendingNow, mp.trending, mp.loadMoreTrending, mp.hasMoreTrending, mp.isLoadingMore), hasMore: mp.hasMoreTrending),
+              _buildSection(context, l10n.nowPlaying, mp.nowPlaying, mp.isLoading, mp,
+                  onLoadMore: () => _navigateToSeeAll(l10n.nowPlaying, mp.nowPlaying, mp.loadMoreNowPlaying, mp.hasMoreNowPlaying, mp.isLoadingMore), hasMore: mp.hasMoreNowPlaying),
+              _buildSection(context, l10n.popular, mp.popular, mp.isLoading, mp,
+                  onLoadMore: () => _navigateToSeeAll(l10n.popular, mp.popular, mp.loadMorePopular, mp.hasMorePopular, mp.isLoadingMore), hasMore: mp.hasMorePopular),
+              _buildSection(context, l10n.comingSoon, mp.upcoming, mp.isLoading, mp,
+                  onLoadMore: () => _navigateToSeeAll(l10n.comingSoon, mp.upcoming, mp.loadMoreUpcoming, mp.hasMoreUpcoming, mp.isLoadingMore), hasMore: mp.hasMoreUpcoming),
+              _buildSection(context, l10n.topRated, mp.topRated, mp.isLoading, mp,
+                  onLoadMore: () => _navigateToSeeAll(l10n.topRated, mp.topRated, mp.loadMoreTopRated, mp.hasMoreTopRated, mp.isLoadingMore), hasMore: mp.hasMoreTopRated),
             ],
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
@@ -261,6 +264,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   }
 
   Widget _buildGenreGrid(MovieProvider mp) {
+    final l10n = AppLocalizations.of(context)!;
     if (mp.isLoading && mp.genreMovies.isEmpty) {
       return SliverFillRemaining(
         child: MovieGridShimmer(crossAxisCount: Responsive.movieGridColumns(context)),
@@ -291,7 +295,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
           if (mp.genreMovies.isEmpty && !mp.isLoading)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Text('No movies found',
+              child: Text(l10n.noMoviesFound,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
             )
             else
@@ -347,6 +351,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Widget _buildSection(
       BuildContext context, String title, List<dynamic> movies, bool isLoading,
       MovieProvider mp, {VoidCallback? onLoadMore, bool hasMore = false}) {
+    final l10n = AppLocalizations.of(context)!;
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,7 +376,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Text(
-                        'See All >',
+                        '${l10n.seeAll} >',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: Theme.of(context).colorScheme.primary,
@@ -391,7 +396,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
           else if (movies.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Text('No movies available',
+              child: Text(l10n.noMoviesAvailable,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
             )
           else
@@ -443,7 +448,9 @@ class _BrowseScreenState extends State<BrowseScreen> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: b.linkUrl != null ? () {} : null,
+                  onTap: b.linkUrl != null
+                      ? () => launchUrl(Uri.parse(b.linkUrl!), mode: LaunchMode.externalApplication)
+                      : null,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -471,6 +478,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Widget _buildFeaturedMoviesSliver(BuildContext context) {
     final hc = context.watch<HomeContentProvider>();
     final movies = hc.featuredMovies;
+    final l10n = AppLocalizations.of(context)!;
     if (movies.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     return SliverToBoxAdapter(
       child: Column(
@@ -483,7 +491,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 Icon(Icons.star, size: 18, color: Colors.amber),
                 const SizedBox(width: 6),
                 Text(
-                  'Featured Movies',
+                  l10n.featuredMovies,
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

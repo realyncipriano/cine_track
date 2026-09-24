@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
 
 class AvatarPicker extends StatelessWidget {
   final void Function(String base64, String mimeType) onPicked;
@@ -10,6 +11,7 @@ class AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BottomSheet(
       onClosing: () {},
       builder: (_) => Container(
@@ -30,7 +32,7 @@ class AvatarPicker extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Change Profile Picture',
+              l10n.changeProfilePicture,
               style: GoogleFonts.montserrat(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -41,21 +43,21 @@ class AvatarPicker extends StatelessWidget {
             _option(
               context,
               icon: Icons.camera_alt,
-              label: 'Take Photo',
+              label: l10n.takePhoto,
               onTap: () => _pick(context, ImageSource.camera),
             ),
             const SizedBox(height: 12),
             _option(
               context,
               icon: Icons.photo_library,
-              label: 'Choose from Gallery',
+              label: l10n.chooseFromGallery,
               onTap: () => _pick(context, ImageSource.gallery),
             ),
             const SizedBox(height: 12),
             _option(
               context,
               icon: Icons.delete_outline,
-              label: 'Remove Current Photo',
+              label: l10n.removeCurrentPhoto,
               color: Theme.of(context).colorScheme.error,
               onTap: () {
                 Navigator.pop(context);
@@ -66,7 +68,7 @@ class AvatarPicker extends StatelessWidget {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Cancel',
+                l10n.cancel,
                 style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
               ),
             ),
@@ -94,6 +96,7 @@ class AvatarPicker extends StatelessWidget {
   }
 
   Future<void> _pick(BuildContext context, ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     Navigator.pop(context);
     try {
       final picker = ImagePicker();
@@ -116,7 +119,7 @@ class AvatarPicker extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(content: Text(l10n.failedToPickImage(e.toString())), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     }

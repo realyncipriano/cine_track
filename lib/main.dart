@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'config.dart';
 
@@ -11,7 +12,10 @@ void main() {
     WidgetsFlutterBinding.ensureInitialized();
 
     if (!kIsWeb) {
-      // Configure edge-to-edge rendering for Android
+      await Firebase.initializeApp();
+    }
+
+    if (!kIsWeb) {
       SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
 
 class PaginationBar extends StatelessWidget {
   final int currentPage;
@@ -15,6 +16,7 @@ class PaginationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -27,7 +29,7 @@ class PaginationBar extends StatelessWidget {
                 : null,
           ),
           Text(
-            'Page $currentPage of $totalPages',
+            l10n.pageIndicator(currentPage, totalPages),
             style: GoogleFonts.inter(fontSize: 13),
           ),
           IconButton(

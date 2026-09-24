@@ -10,7 +10,7 @@ class ReviewReplyProvider extends ChangeNotifier {
 
   final Map<int, List<ReviewReply>> _repliesByReview = {};
   final Set<int> _expandedReviews = {};
-  final bool _isLoading = false;
+  bool _isLoading = false;
   String? _error;
 
   Map<int, List<ReviewReply>> get repliesByReview => _repliesByReview;
@@ -32,7 +32,18 @@ class ReviewReplyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    _repliesByReview.clear();
+    _expandedReviews.clear();
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> fetchReplies(int reviewId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       final data = await _api.get('${ApiEndpoints.reviewReplies}?review_id=$reviewId');
       _repliesByReview[reviewId] = (data['replies'] as List<dynamic>?)
@@ -40,14 +51,29 @@ class ReviewReplyProvider extends ChangeNotifier {
               .toList() ?? [];
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> addReply(int reviewId, String body) async {
     try {
       await _api.post(ApiEndpoints.reviewReply, {'review_id': reviewId, 'body': body});
       await fetchReplies(reviewId);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteOwnReply(int replyId) async {
+    try {
+      await _api.post(ApiEndpoints.deleteMyReviewReply, {'id': replyId});
+      for (final reviewId in _repliesByReview.keys) {
+        _repliesByReview[reviewId]?.removeWhere((r) => r.id == replyId);
+      }
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       notifyListeners();

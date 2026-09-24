@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../helpers/responsive.dart';
 import '../../models/admin/banner.dart' as banner_model;
+import 'package:go_router/go_router.dart';
 import '../../providers/admin/banner_management_provider.dart';
 
 class AdminBannersScreen extends StatefulWidget {
@@ -115,6 +116,17 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+                final goRouter = GoRouter.maybeOf(context);
+                if (goRouter != null) {
+                  goRouter.go('/admin');
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showBannerDialog(),

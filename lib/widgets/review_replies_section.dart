@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/auth_provider.dart';
 import '../providers/review_reply_provider.dart';
 import '../helpers/time_ago.dart';
+import 'user_mention_tile.dart';
 
 class ReviewRepliesSection extends StatelessWidget {
   final int reviewId;
@@ -16,6 +19,8 @@ class ReviewRepliesSection extends StatelessWidget {
     final expanded = prov.isExpanded(reviewId);
     final replies = prov.repliesByReview[reviewId] ?? [];
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final currentUserId = context.watch<AuthProvider>().user?.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,7 +34,7 @@ class ReviewRepliesSection extends StatelessWidget {
                 Icon(Icons.reply, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                 const SizedBox(width: 4),
                 Text(
-                  expanded ? 'Hide replies (${replies.length})' : 'Replies (${replies.length})',
+                  expanded ? l10n.hideReplies(replies.length) : l10n.repliesCount(replies.length),
                   style: GoogleFonts.inter(fontSize: 12, color: theme.colorScheme.primary),
                 ),
                 Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 16, color: theme.colorScheme.primary),
@@ -43,13 +48,11 @@ class ReviewRepliesSection extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  child: Text(
-                    (r.userName ?? 'A')[0].toUpperCase(),
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
-                  ),
+                UserMentionTile(
+                  userId: r.userId ?? 0,
+                  userName: r.userName ?? l10n.anonymous,
+                  avatarSize: 24,
+                  fontSize: 12,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -58,13 +61,13 @@ class ReviewRepliesSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(r.userName ?? 'Anonymous', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                          const SizedBox.shrink(),
                           const SizedBox(width: 6),
                           Text(timeAgo(r.createdAt), style: GoogleFonts.inter(fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
-                          if (isAdmin)
+                          if (isAdmin || (currentUserId != null && r.userId == currentUserId))
                             IconButton(
                               icon: Icon(Icons.delete_outline, size: 14, color: theme.colorScheme.error),
-                              onPressed: () => prov.deleteReply(r.id),
+                              onPressed: () => _confirmDeleteReply(context, prov, r.id, isAdmin),
                               constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                               padding: EdgeInsets.zero,
                             ),
@@ -82,6 +85,35 @@ class ReviewRepliesSection extends StatelessWidget {
           _ReplyInput(reviewId: reviewId),
         ],
       ],
+    );
+  }
+
+  void _confirmDeleteReply(BuildContext context, ReviewReplyProvider prov, int replyId, bool isAdmin) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Delete reply', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text('Are you sure you want to delete this reply?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (isAdmin) {
+                prov.deleteReply(replyId);
+              } else {
+                prov.deleteOwnReply(replyId);
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -106,6 +138,7 @@ class _ReplyInputState extends State<_ReplyInput> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: Row(
@@ -114,7 +147,7 @@ class _ReplyInputState extends State<_ReplyInput> {
             child: TextField(
               controller: _ctrl,
               decoration: InputDecoration(
-                hintText: 'Write a reply...',
+                hintText: l10n.writeReplyHint,
                 hintStyle: GoogleFonts.inter(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.38)),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
