@@ -11,7 +11,7 @@ $userId = getAuthUserId();
 
 $pdo = getDb();
 $stmt = $pdo->prepare('
-    SELECT r.id, r.user_id, r.movie_id, r.rating, r.review_text, r.created_at, r.updated_at, u.name as user_name,
+    SELECT r.id, r.user_id, r.movie_id, r.rating, r.review_text, r.created_at, r.updated_at, r.status, u.name as user_name,
            m.title, m.poster_path, m.vote_average as movie_vote_average, m.release_date as movie_release_date
     FROM reviews r
     JOIN users u ON u.id = r.user_id
@@ -42,6 +42,7 @@ foreach ($reviews as $review) {
         'movie_id' => (int) $review['movie_id'],
         'rating' => (int) $review['rating'],
         'review_text' => $review['review_text'],
+        'status' => $review['status'] ?? 'pending',
         'created_at' => $review['created_at'],
         'updated_at' => $review['updated_at'],
         'movie_title' => $review['title'] ?? 'Unknown',

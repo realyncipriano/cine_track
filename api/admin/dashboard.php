@@ -143,6 +143,7 @@ $recentActivity = $stmt->fetchAll();
 // ── Pending reviews list (for dashboard preview) ─────────────────
 $stmt = $pdo->query("
     SELECT r.id, r.rating, r.review_text, r.status, r.created_at,
+           r.user_id, r.movie_id,
            u.name AS user_name
     FROM reviews r
     LEFT JOIN users u ON u.id = r.user_id
@@ -171,7 +172,7 @@ jsonResponse([
             'dates' => $reviewDates,
             'values' => $reviewsPerDay,
         ],
-        'review_statuses' => $reviewStatuses,
+        'review_statuses' => empty($reviewStatuses) ? (object)[] : $reviewStatuses,
     ],
     'top_movies' => $topMovies,
     'recent_activity' => $recentActivity,

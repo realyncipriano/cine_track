@@ -110,8 +110,13 @@ function getAuthUserId(): int {
 
     $userId = (int) $row['user_id'];
 
-    $updateStmt = $pdo->prepare('UPDATE api_tokens SET last_used_at = NOW() WHERE token = ?');
-    $updateStmt->execute([$token]);
+    try {
+        $updateStmt = $pdo->prepare('UPDATE api_tokens SET last_used_at = NOW() WHERE token = ?');
+        $updateStmt->execute([$token]);
+    } catch (\Throwable $e) {
+        error_log('getAuthUserId UPDATE failed: ' . $e->getMessage());
+        throw $e;
+    }
 
     return $userId;
 }
